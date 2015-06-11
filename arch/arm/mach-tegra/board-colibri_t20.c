@@ -1238,7 +1238,7 @@ static struct tegra_usb_platform_data tegra_udc_pdata = {
 	.has_hostpc	= false,
 	.op_mode	= TEGRA_USB_OPMODE_DEVICE,
 	.phy_intf	= TEGRA_USB_PHY_INTF_UTMI,
-	.port_otg	= true,
+	.port_otg	= false,
 	.u_cfg.utmi = {
 		.elastic_limit		= 16,
 		.hssync_start_delay	= 0,
@@ -1450,12 +1450,6 @@ static void colibri_t20_usb_init(void)
 #ifdef CONFIG_USB_GADGET
 	/* OTG should be the first to be registered
 	   EHCI instance 0: USB1_DP/N -> USBOTG_P/N */
-#ifndef CONFIG_USB_TEGRA_OTG
-	platform_device_register(&colibri_otg_device);
-#else /* !CONFIG_USB_TEGRA_OTG */
-	tegra_otg_device.dev.platform_data = &tegra_otg_pdata;
-	platform_device_register(&tegra_otg_device);
-#endif /* !CONFIG_USB_TEGRA_OTG */
 
 	/* setup the udc platform data */
 	tegra_udc_device.dev.platform_data = &tegra_udc_pdata;
