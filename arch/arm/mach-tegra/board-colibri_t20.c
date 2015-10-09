@@ -1343,21 +1343,6 @@ static struct tegra_usb_platform_data tegra_ehci3_utmi_pdata = {
 	},
 };
 
-#ifdef CONFIG_USB_GADGET
-static struct gpio_vbus_mach_info tegra_udc_gpio_vbus_info = {
-	.gpio_vbus		= USBC_DET,
-	.gpio_pullup		= -1,
-};
-
-static struct platform_device tegra_udc_gpio_vbus = {
-	.name	= "gpio-vbus",
-	.id	= -1,
-	.dev	= {
-		.platform_data	= &tegra_udc_gpio_vbus_info,
-	},
-};
-#endif /* CONFIG_USB_GADGET */
-
 static void colibri_t20_usb_init(void)
 {
 	gpio_request(LAN_V_BUS, "LAN_V_BUS");
@@ -1371,9 +1356,6 @@ static void colibri_t20_usb_init(void)
 #ifdef CONFIG_USB_GADGET
 	/* OTG should be the first to be registered
 	   EHCI instance 0: USB1_DP/N -> USBOTG_P/N */
-
-	platform_device_register(&tegra_udc_gpio_vbus);
-
 	/* setup the udc platform data */
 	tegra_udc_device.dev.platform_data = &tegra_udc_pdata;
 	platform_device_register(&tegra_udc_device);
