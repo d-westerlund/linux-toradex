@@ -315,24 +315,6 @@ static __initdata struct tegra_pingroup_config colibri_t20_pinmux[] = {
 	{TEGRA_PINGROUP_XM2D,	TEGRA_MUX_NONE,		TEGRA_PUPD_NORMAL,	TEGRA_TRI_NORMAL},
 };
 
-#if 0
-/* 32-bit wide data and 28-bit wide address bus, more chip selects */
-static __initdata struct tegra_pingroup_config colibri_t20_widebus_pinmux[] = {
-	/* D28, D29, D30 and D31 */
-	{TEGRA_PINGROUP_DAP1,	TEGRA_MUX_GMI, TEGRA_PUPD_NORMAL, TEGRA_TRI_NORMAL},
-	/* AD20, AD21, AD22 and AD23 */
-	{TEGRA_PINGROUP_GMA,	TEGRA_MUX_GMI, TEGRA_PUPD_NORMAL, TEGRA_TRI_NORMAL},
-	/* AD16, AD17, AD18 and AD19 */
-	{TEGRA_PINGROUP_GMC,	TEGRA_MUX_GMI, TEGRA_PUPD_NORMAL, TEGRA_TRI_NORMAL},
-	/* nCS0 and nCS1 */
-	{TEGRA_PINGROUP_GMD,	TEGRA_MUX_GMI, TEGRA_PUPD_NORMAL, TEGRA_TRI_NORMAL},
-#ifndef SDHCI_8BIT
-	/* AD24, AD25, AD26 and AD27 */
-	{TEGRA_PINGROUP_GME,	TEGRA_MUX_GMI, TEGRA_PUPD_NORMAL, TEGRA_TRI_NORMAL},
-#endif
-};
-#endif
-
 int __init colibri_t20_pinmux_init(void)
 {
 	int i;
