@@ -421,8 +421,6 @@ static struct gpio colibri_t20_gpios[] = {
 	{TEGRA_GPIO_PAA5,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P168 - NC"},
 	{TEGRA_GPIO_PAA6,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P170 - NC"},
 	{TEGRA_GPIO_PAA7,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P172 - NC"},
-	{TEGRA_GPIO_PA3,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P184 - NC"},
-	{TEGRA_GPIO_PA2,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P186 - NC"},
 	{TEGRA_GPIO_PA5,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P144 - NC"},
 	{TEGRA_GPIO_PA4,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P146 - NC"},
 
@@ -440,9 +438,6 @@ static struct gpio colibri_t20_gpios[] = {
 	//{TEGRA_GPIO_PY6,	(GPIOF_IN | GPIOF_NO_EXPORT),	"P37 - WAKE-UP-CPU"},
 	{TEGRA_GPIO_PK6,	(GPIOF_IN ),                	"P135 - MODEM-WAKEUP"},
 	{TEGRA_GPIO_PC6,	(GPIOF_IN ),                	"P31 - XANTSHORT"},
-
-	/* PXA300 Pins. Are not connected on T20.*/
-	{TEGRA_GPIO_PK0,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P150 - MM_PXA300_CMD"},
 
 	/* Compact flash - These pins are not connected on T20*/
 	{TEGRA_GPIO_PC1,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P29 - CF-READY"},
