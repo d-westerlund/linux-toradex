@@ -63,18 +63,20 @@
 #include "wakeups-t2.h"
 
 /* Legacy defines from previous tegra_nor.h (changed) */
-#define __BITMASK0(len)				((1 << (len)) - 1)
-#define __BITMASK(start, len)		(__BITMASK0(len) << (start))
-#define REG_BIT(bit)				(1 << (bit))
-#define REG_FIELD(val, start, len)	(((val) & __BITMASK0(len)) << (start))
-#define REG_FIELD_MASK(start, len)	(~(__BITMASK((start), (len))))
-#define REG_GET_FIELD(val, start, len)	(((val) >> (start)) & __BITMASK0(len))
-#define TEGRA_GMI_PHYS				0x70009000
-#define TEGRA_GMI_BASE				IO_TO_VIRT(TEGRA_GMI_PHYS)
-#define CONFIG_REG					(TEGRA_GMI_BASE + 0x00)
-#define STATUS_REG					(TEGRA_GMI_BASE + 0x04)
-#define CONFIG_SNOR_CS(val) 		REG_FIELD((val), 4, 3)
-#define CONFIG_GO					REG_BIT(31)
+#define __BITMASK0(len)					((1 << (len)) - 1)
+#define __BITMASK(start, len)			(__BITMASK0(len) << (start))
+#define REG_BIT(bit)					(1 << (bit))
+#define REG_FIELD(val, start, len)		(((val) & __BITMASK0(len)) << (start))
+#define TEGRA_GMI_PHYS					0x70009000
+#define TEGRA_GMI_BASE					IO_TO_VIRT(TEGRA_GMI_PHYS)
+#define SNOR_CONFIG_REG					(TEGRA_GMI_BASE + 0x00)
+#define SNOR_STATUS_REG					(TEGRA_GMI_BASE + 0x04)
+#define SNOR_CONFIG_SNOR_CS(val) 		REG_FIELD((val), 4, 3)
+#define SNOR_CONFIG_GO					REG_BIT(31)
+#define SNOR_CONFIG_32BIT				REG_BIT(30)
+#define SNOR_CONFIG_MUX					REG_BIT(28)
+#define SNOR_CONFIG_ADV_POL				REG_BIT(22)
+
 
 /* We define a no export flag. We dont want to export the gpio
 for a NC pin By: Mirza */
@@ -121,13 +123,10 @@ static struct platform_device tegra_camera = {
 };
 #endif /* COLIBRI_T20_VI */
 
-/* CAN */
 
 #if defined(CONFIG_CAN_SJA1000) || defined(CONFIG_CAN_SJA1000_MODULE)
 static struct resource colibri_can_resource[] = {
 	[0] =   {
-		.start	= TEGRA_CAN_BASE,		/* address */
-		.end	= TEGRA_CAN_BASE + TEGRA_CAN_SIZE,/* data */
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] =   {
@@ -139,7 +138,7 @@ static struct resource colibri_can_resource[] = {
 static struct sja1000_platform_data colibri_can_platdata = {
 	.osc_freq	= 24000000,
 	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
+	.cdr		= CDR_CLKOUT_MASK |  /* Set CLKOUT to Fosc */
 			  CDR_CBP, /* CAN input comparator bypass */
 };
 
@@ -153,11 +152,8 @@ static struct platform_device colibri_can_device = {
 	}
 };
 
-/* ********************************CAN DEVICE 2*******************************/
 static struct resource colibri_can_resource2[] = {
 	[0] =   {
-		.start	= TEGRA_CAN2_BASE, 	/* address */
-		.end	= TEGRA_CAN2_BASE + TEGRA_CAN2_SIZE, /* data */
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] =   {
@@ -183,13 +179,8 @@ static struct platform_device colibri_can_device2 = {
 	}
 };
 
-
-#ifdef CONFIG_HM_GTT_CAN /* CAN 3-6 */
-/* ********************************CAN DEVICE 3*******************************/
 static struct resource colibri_can_resource3[] = {
 	[0] =   {
-		.start	= TEGRA_CAN3_BASE, 	/* address */
-		.end	= TEGRA_CAN3_BASE + TEGRA_CAN3_SIZE, /* data */
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] =   {
@@ -215,98 +206,94 @@ static struct platform_device colibri_can_device3 = {
 	}
 };
 
-/* ********************************CAN DEVICE 4*******************************/
-static struct resource colibri_can_resource4[] = {
-	[0] =   {
-		.start	= TEGRA_CAN4_BASE, 	/* address */
-		.end	= TEGRA_CAN4_BASE + TEGRA_CAN4_SIZE, /* data */
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] =   {
-		/* interrupt assigned during initialisation */
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
-	}
-};
-
-static struct sja1000_platform_data colibri_can_platdata4 = {
-	.osc_freq	= 24000000,
-	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
-			  CDR_CBP, /* CAN input comparator bypass */
-};
-
-static struct platform_device colibri_can_device4 = {
-	.name		= "sja1000_platform",
-	.id		= 3,
-	.num_resources	= ARRAY_SIZE(colibri_can_resource4),
-	.resource	= colibri_can_resource4,
-	.dev            = {
-		.platform_data = &colibri_can_platdata4,
-	}
-};
-
-/* ********************************CAN DEVICE 5*******************************/
-static struct resource colibri_can_resource5[] = {
-	[0] =   {
-		.start	= TEGRA_CAN5_BASE, 	/* address */
-		.end	= TEGRA_CAN5_BASE + TEGRA_CAN5_SIZE, /* data */
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] =   {
-		/* interrupt assigned during initialisation */
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
-	}
-};
-
-static struct sja1000_platform_data colibri_can_platdata5 = {
-	.osc_freq	= 24000000,
-	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
-			  CDR_CBP, /* CAN input comparator bypass */
-};
-
-static struct platform_device colibri_can_device5 = {
-	.name		= "sja1000_platform",
-	.id		= 4,
-	.num_resources	= ARRAY_SIZE(colibri_can_resource5),
-	.resource	= colibri_can_resource5,
-	.dev            = {
-		.platform_data = &colibri_can_platdata5,
-	}
-};
-
-static struct resource colibri_can_resource6[] = {
-	[0] =   {
-		.start	= TEGRA_CAN6_BASE, 	/* address */
-		.end	= TEGRA_CAN6_BASE + TEGRA_CAN6_SIZE, /* data */
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] =   {
-		/* interrupt assigned during initialisation */
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
-	}
-};
-
-static struct sja1000_platform_data colibri_can_platdata6 = {
-	.osc_freq	= 24000000,
-	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
-			  CDR_CBP, /* CAN input comparator bypass */
-};
-
-static struct platform_device colibri_can_device6 = {
-	.name		= "sja1000_platform",
-	.id		= 5,
-	.num_resources	= ARRAY_SIZE(colibri_can_resource6),
-	.resource	= colibri_can_resource6,
-	.dev            = {
-		.platform_data = &colibri_can_platdata6,
-	}
-};
-
-#endif /* CONFIG_HM_GTT_CAN */
-
 #endif /* CONFIG_CAN_SJA1000 || CONFIG_CAN_SJA1000_MODULE */
+
+/* 	First appearence is in P1E revision. This revision also added a third can
+	so we use the same switch to add the third CAN
+*/
+static uint8_t vcb_muxed_can = 0;
+
+static int __init vcb_can_mode(char *options)
+{
+	if (!strcmp(options, "1"))
+		vcb_muxed_can = 1;
+
+	return 0;
+}
+__setup("vcb_muxed_can=", vcb_can_mode);
+
+static void vcb_sja1000_init(void)
+{
+
+	u32 snor_config;
+
+	snor_config = readl(SNOR_CONFIG_REG);
+
+	printk("VCB CAN mode is \"%s\"\n", vcb_muxed_can ? "muxed" : "not muxed");
+
+	if (vcb_muxed_can)
+		snor_config |= (SNOR_CONFIG_ADV_POL | SNOR_CONFIG_MUX);
+
+	snor_config |= (SNOR_CONFIG_GO | SNOR_CONFIG_SNOR_CS(SNOR_CS_PIN));
+	writel(snor_config, SNOR_CONFIG_REG);
+
+	tegra_gpio_enable(TEGRA_CAN_INT);
+	tegra_gpio_enable(TEGRA_CAN2_INT);
+	tegra_gpio_enable(TEGRA_CAN3_INT);
+
+	gpio_request_one(TEGRA_CAN_INT, GPIOF_DIR_IN, "CAN1-INT");
+	gpio_request_one(TEGRA_CAN2_INT, GPIOF_DIR_IN, "CAN2-INT");
+	gpio_request_one(TEGRA_CAN3_INT, GPIOF_DIR_IN, "CAN3-INT");
+
+
+	if (vcb_muxed_can) {
+		colibri_can_resource[0].start = CAN_ADDRESS_TO_HW(CAN_OFFSET_MUXED);
+		colibri_can_resource[0].end = CAN_ADDRESS_TO_HW(CAN_OFFSET_MUXED)
+			+ CAN_ADDRESS_SIZE;
+
+		colibri_can_resource[0].flags |= IORESOURCE_MEM_16BIT;
+
+		colibri_can_resource2[0].start = CAN_ADDRESS_TO_HW(CAN2_OFFSET_MUXED);
+		colibri_can_resource2[0].end = CAN_ADDRESS_TO_HW(CAN2_OFFSET_MUXED)
+			+ CAN_ADDRESS_SIZE;
+
+		colibri_can_resource2[0].flags |= IORESOURCE_MEM_16BIT;
+
+		colibri_can_resource3[0].start = CAN_ADDRESS_TO_HW(CAN3_OFFSET_MUXED);
+		colibri_can_resource3[0].end = CAN_ADDRESS_TO_HW(CAN3_OFFSET_MUXED)
+			+ CAN_ADDRESS_SIZE;
+
+		colibri_can_resource3[0].flags |= IORESOURCE_MEM_16BIT;
+	} else {
+		colibri_can_resource[0].start =
+			CAN_ADDRESS_TO_HW(CAN_OFFSET_NON_MUXED);
+
+		colibri_can_resource[0].end =
+			CAN_ADDRESS_TO_HW(CAN_OFFSET_NON_MUXED) + CAN_ADDRESS_SIZE;
+
+		colibri_can_resource2[0].start =
+			CAN_ADDRESS_TO_HW(CAN2_OFFSET_NON_MUXED);
+
+		colibri_can_resource2[0].end =
+			CAN_ADDRESS_TO_HW(CAN2_OFFSET_NON_MUXED) + CAN_ADDRESS_SIZE;
+	}
+
+	colibri_can_resource[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
+	colibri_can_resource[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
+
+	colibri_can_resource2[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
+	colibri_can_resource2[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
+
+	colibri_can_resource3[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
+	colibri_can_resource3[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
+
+	platform_device_register(&colibri_can_device);
+	platform_device_register(&colibri_can_device2);
+
+
+	if (vcb_muxed_can)
+		platform_device_register(&colibri_can_device3);
+}
 
 
 /* Clocks */
@@ -1448,53 +1435,8 @@ static struct platform_device *colibri_t20_devices[] __initdata = {
 
 static void __init colibri_t20_init(void)
 {
-
 #if defined(CONFIG_CAN_SJA1000) || defined(CONFIG_CAN_SJA1000_MODULE)
-	writel(CONFIG_SNOR_CS(CS_PIN), CONFIG_REG);
-	writel(CONFIG_GO | CONFIG_SNOR_CS(CS_PIN), CONFIG_REG);
-	tegra_gpio_enable(TEGRA_CAN_INT);
-	tegra_gpio_enable(TEGRA_CAN2_INT);
-	gpio_request_one(TEGRA_CAN_INT, GPIOF_DIR_IN, "CAN1-INT");
-	gpio_request_one(TEGRA_CAN2_INT, GPIOF_DIR_IN, "CAN2-INT");
-
-	colibri_can_resource[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
-	colibri_can_resource[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
-
-	colibri_can_resource2[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
-	colibri_can_resource2[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
-
-	platform_device_register(&colibri_can_device);
-	platform_device_register(&colibri_can_device2);
-
-#if defined CONFIG_HM_GTT_CAN
-	tegra_gpio_enable(TEGRA_CAN3_INT);
-	tegra_gpio_enable(TEGRA_CAN4_INT);
-	tegra_gpio_enable(TEGRA_CAN5_INT);
-	tegra_gpio_enable(TEGRA_CAN6_INT);
-	gpio_request_one(TEGRA_CAN3_INT, GPIOF_DIR_IN, "CAN3-INT");
-	gpio_request_one(TEGRA_CAN4_INT, GPIOF_DIR_IN, "CAN4-INT");
-	gpio_request_one(TEGRA_CAN5_INT, GPIOF_DIR_IN, "CAN5-INT");
-	gpio_request_one(TEGRA_CAN6_INT, GPIOF_DIR_IN, "CAN6-INT");
-
-
-	colibri_can_resource3[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
-	colibri_can_resource3[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
-
-	colibri_can_resource4[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN4_INT);
-	colibri_can_resource4[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN4_INT);
-
-	colibri_can_resource5[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN5_INT);
-	colibri_can_resource5[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN5_INT);
-
-	colibri_can_resource6[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN6_INT);
-	colibri_can_resource6[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN6_INT);
-
-	platform_device_register(&colibri_can_device3);
-	platform_device_register(&colibri_can_device4);
-	platform_device_register(&colibri_can_device5);
-	platform_device_register(&colibri_can_device6);
-#endif /* CONFIG_HM_GTT_CAN */
-
+	vcb_sja1000_init();
 #endif /* CONFIG_CAN_SJA1000 || CONFIG_CAN_SJA1000_MODULE */
 
 	tegra_clk_init_from_table(colibri_t20_clk_init_table);
