@@ -187,7 +187,7 @@
    		};
 
    	    mx4_pic: spi@1 {
-        	compatible = "host,mx4_pic";
+        	compatible = "hostmobility,pic";
         	reg = <1>;
         	spi-max-frequency = <25000000>;
     	};
