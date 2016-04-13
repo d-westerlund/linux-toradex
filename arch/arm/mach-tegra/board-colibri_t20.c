@@ -63,18 +63,20 @@
 #include "wakeups-t2.h"
 
 /* Legacy defines from previous tegra_nor.h (changed) */
-#define __BITMASK0(len)				((1 << (len)) - 1)
-#define __BITMASK(start, len)		(__BITMASK0(len) << (start))
-#define REG_BIT(bit)				(1 << (bit))
-#define REG_FIELD(val, start, len)	(((val) & __BITMASK0(len)) << (start))
-#define REG_FIELD_MASK(start, len)	(~(__BITMASK((start), (len))))
-#define REG_GET_FIELD(val, start, len)	(((val) >> (start)) & __BITMASK0(len))
-#define TEGRA_GMI_PHYS				0x70009000
-#define TEGRA_GMI_BASE				IO_TO_VIRT(TEGRA_GMI_PHYS)
-#define CONFIG_REG					(TEGRA_GMI_BASE + 0x00)
-#define STATUS_REG					(TEGRA_GMI_BASE + 0x04)
-#define CONFIG_SNOR_CS(val) 		REG_FIELD((val), 4, 3)
-#define CONFIG_GO					REG_BIT(31)
+#define __BITMASK0(len)					((1 << (len)) - 1)
+#define __BITMASK(start, len)			(__BITMASK0(len) << (start))
+#define REG_BIT(bit)					(1 << (bit))
+#define REG_FIELD(val, start, len)		(((val) & __BITMASK0(len)) << (start))
+#define TEGRA_GMI_PHYS					0x70009000
+#define TEGRA_GMI_BASE					IO_TO_VIRT(TEGRA_GMI_PHYS)
+#define SNOR_CONFIG_REG					(TEGRA_GMI_BASE + 0x00)
+#define SNOR_STATUS_REG					(TEGRA_GMI_BASE + 0x04)
+#define SNOR_CONFIG_SNOR_CS(val) 		REG_FIELD((val), 4, 3)
+#define SNOR_CONFIG_GO					REG_BIT(31)
+#define SNOR_CONFIG_32BIT				REG_BIT(30)
+#define SNOR_CONFIG_MUX					REG_BIT(28)
+#define SNOR_CONFIG_ADV_POL				REG_BIT(22)
+
 
 /* We define a no export flag. We dont want to export the gpio
 for a NC pin By: Mirza */
@@ -84,50 +86,9 @@ for a NC pin By: Mirza */
    GPIOF_NO_EXPORT flag */
 #define GPIOF_ACT_LOW		(1 << 7)
 
-static struct wm97xx_batt_pdata colibri_t20_adc_pdata = {
-	.batt_aux	= WM97XX_AUX_ID1,	/* AD0 - ANALOG_IN0 */
-	.temp_aux	= WM97XX_AUX_ID2,	/* AD1 - ANALOG_IN1 */
-	.charge_gpio	= -1,
-	.batt_div	= 1,
-	.batt_mult	= 1,
-	.temp_div	= 1,
-	.temp_mult	= 1,
-	.batt_name	= "colibri_t20-analog_inputs",
-};
-
-static struct wm97xx_pdata colibri_t20_wm97xx_pdata = {
-	.batt_pdata = &colibri_t20_adc_pdata,
-};
-
-/* Audio */
-#ifdef CONFIG_SOUND
-static struct platform_device colibri_t20_audio_device = {
-	.name	= "colibri_t20-snd-wm9715l",
-	.id	= 0,
-};
-
-void *get_colibri_t20_audio_platform_data(void)
-{
-	return &colibri_t20_wm97xx_pdata;
-}
-EXPORT_SYMBOL(get_colibri_t20_audio_platform_data);
-#endif /* CONFIG_SOUND */
-
-#ifdef COLIBRI_T20_VI
-/* Camera */
-static struct platform_device tegra_camera = {
-	.name	= "tegra_camera",
-	.id	= -1,
-};
-#endif /* COLIBRI_T20_VI */
-
-/* CAN */
-
 #if defined(CONFIG_CAN_SJA1000) || defined(CONFIG_CAN_SJA1000_MODULE)
 static struct resource colibri_can_resource[] = {
 	[0] =   {
-		.start	= TEGRA_CAN_BASE,		/* address */
-		.end	= TEGRA_CAN_BASE + TEGRA_CAN_SIZE,/* data */
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] =   {
@@ -139,7 +100,7 @@ static struct resource colibri_can_resource[] = {
 static struct sja1000_platform_data colibri_can_platdata = {
 	.osc_freq	= 24000000,
 	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
+	.cdr		= CDR_CLKOUT_MASK |  /* Set CLKOUT to Fosc */
 			  CDR_CBP, /* CAN input comparator bypass */
 };
 
@@ -153,11 +114,8 @@ static struct platform_device colibri_can_device = {
 	}
 };
 
-/* ********************************CAN DEVICE 2*******************************/
 static struct resource colibri_can_resource2[] = {
 	[0] =   {
-		.start	= TEGRA_CAN2_BASE, 	/* address */
-		.end	= TEGRA_CAN2_BASE + TEGRA_CAN2_SIZE, /* data */
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] =   {
@@ -183,13 +141,8 @@ static struct platform_device colibri_can_device2 = {
 	}
 };
 
-
-#ifdef CONFIG_HM_GTT_CAN /* CAN 3-6 */
-/* ********************************CAN DEVICE 3*******************************/
 static struct resource colibri_can_resource3[] = {
 	[0] =   {
-		.start	= TEGRA_CAN3_BASE, 	/* address */
-		.end	= TEGRA_CAN3_BASE + TEGRA_CAN3_SIZE, /* data */
 		.flags	= IORESOURCE_MEM,
 	},
 	[1] =   {
@@ -215,98 +168,94 @@ static struct platform_device colibri_can_device3 = {
 	}
 };
 
-/* ********************************CAN DEVICE 4*******************************/
-static struct resource colibri_can_resource4[] = {
-	[0] =   {
-		.start	= TEGRA_CAN4_BASE, 	/* address */
-		.end	= TEGRA_CAN4_BASE + TEGRA_CAN4_SIZE, /* data */
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] =   {
-		/* interrupt assigned during initialisation */
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
-	}
-};
-
-static struct sja1000_platform_data colibri_can_platdata4 = {
-	.osc_freq	= 24000000,
-	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
-			  CDR_CBP, /* CAN input comparator bypass */
-};
-
-static struct platform_device colibri_can_device4 = {
-	.name		= "sja1000_platform",
-	.id		= 3,
-	.num_resources	= ARRAY_SIZE(colibri_can_resource4),
-	.resource	= colibri_can_resource4,
-	.dev            = {
-		.platform_data = &colibri_can_platdata4,
-	}
-};
-
-/* ********************************CAN DEVICE 5*******************************/
-static struct resource colibri_can_resource5[] = {
-	[0] =   {
-		.start	= TEGRA_CAN5_BASE, 	/* address */
-		.end	= TEGRA_CAN5_BASE + TEGRA_CAN5_SIZE, /* data */
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] =   {
-		/* interrupt assigned during initialisation */
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
-	}
-};
-
-static struct sja1000_platform_data colibri_can_platdata5 = {
-	.osc_freq	= 24000000,
-	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
-			  CDR_CBP, /* CAN input comparator bypass */
-};
-
-static struct platform_device colibri_can_device5 = {
-	.name		= "sja1000_platform",
-	.id		= 4,
-	.num_resources	= ARRAY_SIZE(colibri_can_resource5),
-	.resource	= colibri_can_resource5,
-	.dev            = {
-		.platform_data = &colibri_can_platdata5,
-	}
-};
-
-static struct resource colibri_can_resource6[] = {
-	[0] =   {
-		.start	= TEGRA_CAN6_BASE, 	/* address */
-		.end	= TEGRA_CAN6_BASE + TEGRA_CAN6_SIZE, /* data */
-		.flags	= IORESOURCE_MEM,
-	},
-	[1] =   {
-		/* interrupt assigned during initialisation */
-		.flags	= IORESOURCE_IRQ | IORESOURCE_IRQ_HIGHEDGE,
-	}
-};
-
-static struct sja1000_platform_data colibri_can_platdata6 = {
-	.osc_freq	= 24000000,
-	.ocr		= (OCR_MODE_NORMAL | OCR_TX0_PUSHPULL),
-	.cdr		= CDR_CLK_OFF | /* Clock off (CLKOUT pin) */
-			  CDR_CBP, /* CAN input comparator bypass */
-};
-
-static struct platform_device colibri_can_device6 = {
-	.name		= "sja1000_platform",
-	.id		= 5,
-	.num_resources	= ARRAY_SIZE(colibri_can_resource6),
-	.resource	= colibri_can_resource6,
-	.dev            = {
-		.platform_data = &colibri_can_platdata6,
-	}
-};
-
-#endif /* CONFIG_HM_GTT_CAN */
-
 #endif /* CONFIG_CAN_SJA1000 || CONFIG_CAN_SJA1000_MODULE */
+
+/* 	First appearence is in P1E revision. This revision also added a third can
+	so we use the same switch to add the third CAN
+*/
+static uint8_t vcb_muxed_can = 0;
+
+static int __init vcb_can_mode(char *options)
+{
+	if (!strcmp(options, "1"))
+		vcb_muxed_can = 1;
+
+	return 0;
+}
+__setup("vcb_muxed_can=", vcb_can_mode);
+
+static void vcb_sja1000_init(void)
+{
+
+	u32 snor_config;
+
+	snor_config = readl(SNOR_CONFIG_REG);
+
+	printk("VCB CAN mode is \"%s\"\n", vcb_muxed_can ? "muxed" : "not muxed");
+
+	if (vcb_muxed_can)
+		snor_config |= (SNOR_CONFIG_ADV_POL | SNOR_CONFIG_MUX);
+
+	snor_config |= (SNOR_CONFIG_GO | SNOR_CONFIG_SNOR_CS(SNOR_CS_PIN));
+	writel(snor_config, SNOR_CONFIG_REG);
+
+	tegra_gpio_enable(TEGRA_CAN_INT);
+	tegra_gpio_enable(TEGRA_CAN2_INT);
+	tegra_gpio_enable(TEGRA_CAN3_INT);
+
+	gpio_request_one(TEGRA_CAN_INT, GPIOF_DIR_IN, "CAN1-INT");
+	gpio_request_one(TEGRA_CAN2_INT, GPIOF_DIR_IN, "CAN2-INT");
+	gpio_request_one(TEGRA_CAN3_INT, GPIOF_DIR_IN, "CAN3-INT");
+
+
+	if (vcb_muxed_can) {
+		colibri_can_resource[0].start = CAN_ADDRESS_TO_HW(CAN_OFFSET_MUXED);
+		colibri_can_resource[0].end = CAN_ADDRESS_TO_HW(CAN_OFFSET_MUXED)
+			+ CAN_ADDRESS_SIZE;
+
+		colibri_can_resource[0].flags |= IORESOURCE_MEM_16BIT;
+
+		colibri_can_resource2[0].start = CAN_ADDRESS_TO_HW(CAN2_OFFSET_MUXED);
+		colibri_can_resource2[0].end = CAN_ADDRESS_TO_HW(CAN2_OFFSET_MUXED)
+			+ CAN_ADDRESS_SIZE;
+
+		colibri_can_resource2[0].flags |= IORESOURCE_MEM_16BIT;
+
+		colibri_can_resource3[0].start = CAN_ADDRESS_TO_HW(CAN3_OFFSET_MUXED);
+		colibri_can_resource3[0].end = CAN_ADDRESS_TO_HW(CAN3_OFFSET_MUXED)
+			+ CAN_ADDRESS_SIZE;
+
+		colibri_can_resource3[0].flags |= IORESOURCE_MEM_16BIT;
+	} else {
+		colibri_can_resource[0].start =
+			CAN_ADDRESS_TO_HW(CAN_OFFSET_NON_MUXED);
+
+		colibri_can_resource[0].end =
+			CAN_ADDRESS_TO_HW(CAN_OFFSET_NON_MUXED) + CAN_ADDRESS_SIZE;
+
+		colibri_can_resource2[0].start =
+			CAN_ADDRESS_TO_HW(CAN2_OFFSET_NON_MUXED);
+
+		colibri_can_resource2[0].end =
+			CAN_ADDRESS_TO_HW(CAN2_OFFSET_NON_MUXED) + CAN_ADDRESS_SIZE;
+	}
+
+	colibri_can_resource[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
+	colibri_can_resource[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
+
+	colibri_can_resource2[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
+	colibri_can_resource2[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
+
+	colibri_can_resource3[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
+	colibri_can_resource3[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
+
+	platform_device_register(&colibri_can_device);
+	platform_device_register(&colibri_can_device2);
+
+
+	if (vcb_muxed_can)
+		platform_device_register(&colibri_can_device3);
+}
 
 
 /* Clocks */
@@ -421,28 +370,15 @@ static struct gpio colibri_t20_gpios[] = {
 	{TEGRA_GPIO_PAA5,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P168 - NC"},
 	{TEGRA_GPIO_PAA6,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P170 - NC"},
 	{TEGRA_GPIO_PAA7,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P172 - NC"},
-	{TEGRA_GPIO_PA3,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P184 - NC"},
-	{TEGRA_GPIO_PA2,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P186 - NC"},
 	{TEGRA_GPIO_PA5,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P144 - NC"},
 	{TEGRA_GPIO_PA4,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P146 - NC"},
 
 	/* Digital inputs */
 	// P45 is used for CF in PXA. Consider change.
 
-#ifdef CONFIG_HM_DIGITAL_INPUTS
-	{TEGRA_GPIO_PV3,	(GPIOF_IN | GPIOF_ACT_LOW),		"P45 - DIGITAL-IN-1"},
-	{TEGRA_GPIO_PC7,	(GPIOF_IN | GPIOF_ACT_LOW),		"P43 - DIGITAL-IN-2"},
-	{TEGRA_GPIO_PB6,	(GPIOF_IN | GPIOF_ACT_LOW),		"P55 - DIGITAL-IN-3"},
-	{TEGRA_GPIO_PB4,	(GPIOF_IN | GPIOF_ACT_LOW),		"P59 - DIGITAL-IN-4"},
-	{TEGRA_GPIO_PZ0,	(GPIOF_IN | GPIOF_ACT_LOW),		"P23 - DIGITAL-IN-5"},
-	{TEGRA_GPIO_PZ1,	(GPIOF_IN | GPIOF_ACT_LOW),		"P25 - DIGITAL-IN-6"},
-#endif /* CONFIG_HM_DIGITAL_INPUTS */
 	//{TEGRA_GPIO_PY6,	(GPIOF_IN | GPIOF_NO_EXPORT),	"P37 - WAKE-UP-CPU"},
 	{TEGRA_GPIO_PK6,	(GPIOF_IN ),                	"P135 - MODEM-WAKEUP"},
 	{TEGRA_GPIO_PC6,	(GPIOF_IN ),                	"P31 - XANTSHORT"},
-
-	/* PXA300 Pins. Are not connected on T20.*/
-	{TEGRA_GPIO_PK0,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P150 - MM_PXA300_CMD"},
 
 	/* Compact flash - These pins are not connected on T20*/
 	{TEGRA_GPIO_PC1,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P29 - CF-READY"},
@@ -458,13 +394,6 @@ static struct gpio colibri_t20_gpios[] = {
 	{TEGRA_GPIO_PX6,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P102 - CF-nPWAIT/MM_PXA300_DAT3"},
 
 	{TEGRA_GPIO_PX7,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P104 - CF-nIOIS16/MM_PXA300_DAT2"},
-
-	/* Extern UART Interrupts*/
-#ifdef CONFIG_HM_EXT_8250_UART
-	{TEGRA_GPIO_PT2,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P69 - UART-INTA"},
-	{TEGRA_GPIO_PBB2,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P133 - UART-INTB"},
-	{TEGRA_GPIO_PK5,	(GPIOF_IN | GPIOF_NO_EXPORT),		"P137 - UART-INTC"},
-#endif /* CONFIG_HM_EXT_8250_UART */
 
 /* Wakeup of external ethernet interface */
 #ifdef CONFIG_HM_EXT_AX88772B
@@ -549,13 +478,8 @@ static void colibri_t20_gpio_init(void)
 static struct mxc_mma845x_platform_data mma845x_data = {
 	.gpio_pin_get = NULL,
 	.gpio_pin_put = NULL,
-#ifdef CONFIG_MACH_HM_VCB
 	.int1 = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PB6),
 	.int2 = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PU5),
-#else
-	.int1 = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PB7),
-	.int2 = TEGRA_GPIO_TO_IRQ(TEGRA_GPIO_PK4),
-#endif
 };
 #endif
 
@@ -567,18 +491,6 @@ static struct i2c_board_info colibri_t20_i2c_bus1_board_info[] __initdata = {
 			.platform_data = (void *)&mma845x_data,
 	},
 #endif
-#ifdef CONFIG_VIDEO_ADV7180
-	{
-		I2C_BOARD_INFO("adv7180", 0x21),
-	},
-#endif /* CONFIG_VIDEO_ADV7180 */
-#ifdef CONFIG_VIDEO_MT9V111
-	{
-		I2C_BOARD_INFO("mt9v111", 0x5c),
-			.platform_data = (void *)&camera_mt9v111_data,
-	},
-#endif /* CONFIG_VIDEO_MT9V111 */
-
 };
 
 static struct tegra_i2c_platform_data colibri_t20_i2c1_platform_data = {
@@ -648,46 +560,7 @@ static void colibri_t20_i2c_init(void)
 	i2c_register_board_info(4, colibri_t20_i2c_bus4_board_info, ARRAY_SIZE(colibri_t20_i2c_bus4_board_info));
 }
 
-/* Keys
-   Note: active-low means pull-ups required on carrier board resp. via pin-muxing
-   Note2: power-key active-high due to EvalBoard v3.1a having 100 K pull-down on SODIMM pin 45 */
-
-
-/* MMC/SD */
-
-#ifndef CONFIG_MACH_HM_VCB
-static struct tegra_sdhci_platform_data colibri_t20_sdhci_wifi_platform_data = {
-	/* We dont have a card detect pin for wifi. I is always connected. */
-	.is_8bit	= 0,
-	.cd_gpio	= -1,
-	.power_gpio	= -1,
-	.wp_gpio	= -1,
-};
-
-static struct tegra_sdhci_platform_data colibri_t20_sdhci_mmc_platform_data = {
-	.cd_gpio	= MMC_CD,
-	.is_8bit	= 0,
-	.power_gpio	= -1,
-	.wp_gpio	= -1,
-};
-
-int __init colibri_t20_sdhci_init(void)
-{
-	tegra_sdhci_device2.dev.platform_data =
-			&colibri_t20_sdhci_mmc_platform_data;
-
-	tegra_sdhci_device4.dev.platform_data =
-			&colibri_t20_sdhci_wifi_platform_data;
-
-	platform_device_register(&tegra_sdhci_device2);
-	platform_device_register(&tegra_sdhci_device4);
-
-	return 0;
-}
-#endif
-
 /* NAND */
-
 static struct tegra_nand_chip_parms nand_chip_parms[] = {
 	/* Micron MT29F4G08ABBDAH4 */
 	[0] = {
@@ -868,21 +741,7 @@ static struct platform_device status_led_dev = {
 		.platform_data	= &status_led_data,
 	},
 };
-
-#if 0
-static struct gpio status_leds_gpios[] = {
-	{ TEGRA_GPIO_PL2, GPIOF_OUT_INIT_LOW, "LED-USB" }, /* default to OFF */
-	{ TEGRA_GPIO_PAA1, GPIOF_OUT_INIT_HIGH,  "LED-ON-2" }, /* default to ON */
-	{ TEGRA_GPIO_PD6, GPIOF_OUT_INIT_HIGH,  "LED-VEHICLE" }, /* default to OFF */
-};
-//err = gpio_request_array(status_leds_gpios, ARRAY_SIZE(status_leds_gpios));
-gpio_request_one(TEGRA_GPIO_PL2, GPIOF_OUT_INIT_LOW, "LED-USB");
-if (err) {
-	pr_err("Failed to register status LED:s\n");
-}
-#endif
-
-#endif
+#endif /* CONFIG_MACH_HM_VCB */
 
 
 /* RTC */
@@ -923,8 +782,6 @@ static struct spi_board_info tegra_spi_devices[] __initdata = {
 	},
 	{
 		.bus_num	= 3,
-//working with spidev_test
-//		.chip_select	= 0,
 		.chip_select	= 1,
 		.irq		= 0,
 		.max_speed_hz	= 50000000,
@@ -1098,35 +955,6 @@ static int __init colibri_t20_thermal_debug_init(void)
 late_initcall(colibri_t20_thermal_debug_init);
 #endif /* CONFIG_DEBUG_FS */
 
-/* UART */
-#ifdef CONFIG_HM_EXT_8250_UART
-#define SERIAL_FLAGS (UPF_BOOT_AUTOCONF | UPF_IOREMAP | UPF_SKIP_TEST)
-#define SERIAL_CLK   (24000000)
-
-static struct plat_serial8250_port extern_uart_platform_data[] = {
-	[0] = { 	/* Extern uart C (RS232)*/
-		.mapbase	= TEGRA_EXT_UARTC_BASE,
-		.irq		= TEGRA_GPIO_TO_IRQ(TEGRA_EXT_UARTC_INT),
-		.irqflags 	= IRQF_TRIGGER_RISING,
-		.flags		= SERIAL_FLAGS,
-		.iotype		= UPIO_MEM,
-		.regshift	= 5,
-		.uartclk	= SERIAL_CLK,
-	},
-	{
-		.flags = 0
-	},
-};
-
-static struct platform_device extern_uart = {
-	.name = "serial8250",
-	.id = PLAT8250_DEV_PLATFORM1,
-	.dev = {
-		.platform_data = extern_uart_platform_data,
-	},
-};
-#endif /* ifdef CONFIG_HM_EXT_8250_UART */
-
 static struct platform_device *colibri_t20_uart_devices[] __initdata = {
 /*
 	MX-4
@@ -1145,15 +973,9 @@ static struct platform_device *colibri_t20_uart_devices[] __initdata = {
 
 */
 	&tegra_uarte_device,
-#ifdef CONFIG_MACH_HM_MX4
-	&tegra_uarta_device,
-#endif /* CONFIG_MACH_HM_MX4 */
 	&tegra_uartb_device,
 	&tegra_uartc_device,
 	&tegra_uartd_device,
-#ifdef CONFIG_HM_EXT_8250_UART
-	&extern_uart,
-#endif /* CONFIG_HM_EXT_8250_UART */
 };
 
 static struct uart_clk_parent uart_parent_clk[] = {
@@ -1370,118 +1192,26 @@ static void colibri_t20_usb_init(void)
 
 }
 
-/* W1, aka OWR, aka OneWire */
-
-#ifdef CONFIG_W1_MASTER_TEGRA
-struct tegra_w1_timings colibri_t20_w1_timings = {
-		.tsu		= 1,
-		.trelease	= 0xf,
-		.trdv		= 0xf,
-		.tlow0		= 0x3c,
-		.tlow1		= 1,
-		.tslot		= 0x77,
-
-		.tpdl		= 0x78,
-		.tpdh		= 0x1e,
-		.trstl		= 0x1df,
-		.trsth		= 0x1df,
-		.rdsclk		= 0x7,
-		.psclk		= 0x50,
-};
-
-struct tegra_w1_platform_data colibri_t20_w1_platform_data = {
-	.clk_id		= "tegra_w1",
-	.timings	= &colibri_t20_w1_timings,
-};
-#endif /* CONFIG_W1_MASTER_TEGRA */
-
 static struct platform_device *colibri_t20_devices[] __initdata = {
 #ifdef CONFIG_RTC_DRV_TEGRA
 	&tegra_rtc_device,
 #endif
 	&tegra_nand_device,
-
 	&tegra_pmu_device,
 	&tegra_gart_device,
 	&tegra_aes_device,
-#ifdef CONFIG_KEYBOARD_GPIO
-	&colibri_t20_keys_device,
-#endif
 	&tegra_wdt_device,
 	&tegra_avp_device,
-#ifdef CONFIG_TEGRA_CAMERA
-	&tegra_camera,
-#endif
-	&tegra_ac97_device,
-	&tegra_spdif_device,
 	&tegra_das_device,
 	&spdif_dit_device,
-//bluetooth
-	&tegra_pcm_device,
-#ifdef CONFIG_SOUND
-	&colibri_t20_audio_device,
-#endif
 	&tegra_spi_device4,
-#ifdef CONFIG_MACH_HM_VCB
 	&status_led_dev,
-#endif
-	&tegra_pwfm1_device,
-	&tegra_pwfm2_device,
-	&tegra_pwfm3_device,
-#ifdef CONFIG_W1_MASTER_TEGRA
-	&tegra_w1_device,
-#endif
 };
 
 static void __init colibri_t20_init(void)
 {
-
 #if defined(CONFIG_CAN_SJA1000) || defined(CONFIG_CAN_SJA1000_MODULE)
-	writel(CONFIG_SNOR_CS(CS_PIN), CONFIG_REG);
-	writel(CONFIG_GO | CONFIG_SNOR_CS(CS_PIN), CONFIG_REG);
-	tegra_gpio_enable(TEGRA_CAN_INT);
-	tegra_gpio_enable(TEGRA_CAN2_INT);
-	gpio_request_one(TEGRA_CAN_INT, GPIOF_DIR_IN, "CAN1-INT");
-	gpio_request_one(TEGRA_CAN2_INT, GPIOF_DIR_IN, "CAN2-INT");
-
-	colibri_can_resource[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
-	colibri_can_resource[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN_INT);
-
-	colibri_can_resource2[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
-	colibri_can_resource2[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN2_INT);
-
-	platform_device_register(&colibri_can_device);
-	platform_device_register(&colibri_can_device2);
-
-#if defined CONFIG_HM_GTT_CAN
-	tegra_gpio_enable(TEGRA_CAN3_INT);
-	tegra_gpio_enable(TEGRA_CAN4_INT);
-	tegra_gpio_enable(TEGRA_CAN5_INT);
-	tegra_gpio_enable(TEGRA_CAN6_INT);
-	gpio_request_one(TEGRA_CAN3_INT, GPIOF_DIR_IN, "CAN3-INT");
-	gpio_request_one(TEGRA_CAN4_INT, GPIOF_DIR_IN, "CAN4-INT");
-	gpio_request_one(TEGRA_CAN5_INT, GPIOF_DIR_IN, "CAN5-INT");
-	gpio_request_one(TEGRA_CAN6_INT, GPIOF_DIR_IN, "CAN6-INT");
-
-
-	colibri_can_resource3[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
-	colibri_can_resource3[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN3_INT);
-
-	colibri_can_resource4[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN4_INT);
-	colibri_can_resource4[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN4_INT);
-
-	colibri_can_resource5[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN5_INT);
-	colibri_can_resource5[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN5_INT);
-
-	colibri_can_resource6[1].start	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN6_INT);
-	colibri_can_resource6[1].end	= TEGRA_GPIO_TO_IRQ(TEGRA_CAN6_INT);
-
-	platform_device_register(&colibri_can_device3);
-	platform_device_register(&colibri_can_device4);
-	platform_device_register(&colibri_can_device5);
-	platform_device_register(&colibri_can_device6);
-#endif /* CONFIG_HM_GTT_CAN */
-
+	vcb_sja1000_init();
 #endif /* CONFIG_CAN_SJA1000 || CONFIG_CAN_SJA1000_MODULE */
 
 	tegra_clk_init_from_table(colibri_t20_clk_init_table);
@@ -1489,28 +1219,14 @@ static void __init colibri_t20_init(void)
 	colibri_t20_thermd_alert_init();
 	colibri_t20_i2c_init();
 	colibri_t20_uart_init();
-//
-	tegra_ac97_device.dev.platform_data = &colibri_t20_wm97xx_pdata;
-//
-#ifdef CONFIG_W1_MASTER_TEGRA
-	tegra_w1_device.dev.platform_data = &colibri_t20_w1_platform_data;
-#endif
+
 	platform_add_devices(colibri_t20_devices,
 			     ARRAY_SIZE(colibri_t20_devices));
 	tegra_ram_console_debug_init();
-#ifndef CONFIG_MACH_HM_VCB
-	colibri_t20_sdhci_init();
-#endif /* CONFIG_MACH_HM_VCB */
 	colibri_t20_regulator_init();
-
-//	tegra_das_device.dev.platform_data = &tegra_das_pdata;
-//	tegra_ac97_device.dev.platform_data = &tegra_audio_pdata;
-//	tegra_spdif_input_device.name = "spdif";
-//	tegra_spdif_input_device.dev.platform_data = &tegra_spdif_audio_pdata;
 
 	colibri_t20_usb_init();
 	colibri_t20_panel_init();
-//sensors
 
 	/* Note: V1.1c modules require proper BCT setting 666 rather than
 	   721.5 MHz EMC clock */
@@ -1522,12 +1238,7 @@ static void __init colibri_t20_init(void)
 	tegra_release_bootloader_fb();
 
 	/* Show platform version */
-#ifdef CONFIG_MACH_HM_VCB
 	pr_info("Host Mobility VCB\n");
-#endif
-#ifdef CONFIG_MACH_HM_MX4
-	pr_info("Host Mobility MX4\n");
-#endif
 }
 
 int __init tegra_colibri_t20_protected_aperture_init(void)
