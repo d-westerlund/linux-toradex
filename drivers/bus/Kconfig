@@ -131,6 +131,14 @@ config SUNXI_RSB
 	  with various RSB based devices, such as AXP223, AXP8XX PMICs,
 	  and AC100/AC200 ICs.
 
+config TEGRA_NOR
+	tristate "Nvidia Tegra NOR flash bus driver a.k.a GMI/SNOR"
+		depends on ARCH_TEGRA_2x_SOC || ARCH_TEGRA_3x_SOC
+		depends on OF
+		default y
+		help
+			Driver for NOR flash bus found on Tegra30/20 SOC`s.
+
 config UNIPHIER_SYSTEM_BUS
 	tristate "UniPhier System Bus driver"
 	depends on ARCH_UNIPHIER && OF
