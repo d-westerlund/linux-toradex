@@ -36,6 +36,85 @@
 				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
 			};
 
+			/* not tri-stating GMI_WR_N on nPWE SODIMM pin 99 */
+			sdmmc3_dat4_pd1 {
+				nvidia,pins = "sdmmc3_dat4_pd1";
+				nvidia,function = "sdmmc3";
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* not tri-stating GMI_WR_N on RDnWR SODIMM pin 93 */
+			sdmmc3_dat5_pd0 {
+				nvidia,pins = "sdmmc3_dat5_pd0";
+				nvidia,function = "sdmmc3";
+				nvidia,pull = <TEGRA_PIN_PULL_DOWN>;
+				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,enable-input = <TEGRA_PIN_DISABLE>;
+			};
+
+			/* multiplexed with SDMMC3_DAT4 gated GMI_WR_N*/
+			lcd_wr_n_pz3 {
+				nvidia,pins = "lcd_wr_n_pz3";
+				nvidia,function = "rsvd";
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_ENABLE>;
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
+
+			/* CAN-1-INT */
+			sdmmc3_dat2_pb5 {
+				nvidia,pins = "sdmmc3_dat2_pb5";
+				nvidia,function = "sdmmc3";
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
+
+			/* CAN-2-INT */
+			sdmmc3_clk_pa6 {
+				nvidia,pins = "sdmmc3_clk_pa6";
+				nvidia,function = "sdmmc3";
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
+
+			/* CAN-2-INT, CAN-3-INT, CAN-4-INT, CAN-5-INT */
+			dap1_fs_pn0 {
+				nvidia,pins = "dap1_fs_pn0",
+						"dap1_din_pn1",
+						"dap1_dout_pn2",
+						"dap1_sclk_pn3";
+				nvidia,function = "i2s0";
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
+
+			gmi_ad0_pg0 {
+				nvidia,pins = "gmi_ad0_pg0",
+				    	"gmi_ad1_pg1",
+				    	"gmi_ad2_pg2",
+				    	"gmi_ad3_pg3",
+				    	"gmi_ad4_pg4",
+				    	"gmi_ad5_pg5",
+				    	"gmi_ad6_pg6",
+				    	"gmi_ad7_pg7",
+				    	"dap2_fs_pa2",
+				    	"dap2_sclk_pa3",
+				    	"dap4_sclk_pp7",
+				    	"gmi_wr_n_pi0",
+				    	"gmi_oe_n_pi1",
+				    	"gmi_cs4_n_pk2",
+				    	"gmi_adv_n_pk0";
+				nvidia,function = "gmi";
+				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
+				nvidia,tristate = <TEGRA_PIN_DISABLE>;
+				nvidia,enable-input = <TEGRA_PIN_ENABLE>;
+			};
+
 			/* Thermal alert, need to be disabled */
 			lcd_dc1_pd2 {
 				nvidia,pins = "lcd_dc1_pd2";
@@ -52,6 +131,7 @@
 				nvidia,pull = <TEGRA_PIN_PULL_NONE>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+
 			kb_row11_ps3 {
 				nvidia,pins =	"kb_row11_ps3",
 						"kb_row12_ps4",
@@ -137,6 +217,84 @@
 				nvidia,pull = <TEGRA_PIN_PULL_UP>;
 				nvidia,tristate = <TEGRA_PIN_DISABLE>;
 			};
+		};
+	};
+
+	nor@70009000 {
+		status = "okay";
+		ranges = <
+			0 0 0x48000000 0x00000100
+			1 0 0x48040000 0x00000100
+			2 0 0x48080000 0x00000100
+			3 0 0x480A0000 0x00000100
+			4 0 0x480C0000 0x00000100
+			5 0 0x480E0000 0x00000100
+		>;
+
+		can@0,0 {
+			compatible = "nxp,sja1000";
+			reg = <0 0 0x100>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(B, 5) IRQ_TYPE_EDGE_RISING>;
+			nxp,external-clock-frequency = <24000000>;
+			nxp,tx-output-config = <0x16>;
+			nxp,clock-out-frequency = <24000000>;
+			reg-io-width = <2>;
+		};
+
+
+		can@1,0 {
+			compatible = "nxp,sja1000";
+			reg = <1 0 0x100>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(A, 6) IRQ_TYPE_EDGE_RISING>;
+			nxp,external-clock-frequency = <24000000>;
+			nxp,tx-output-config = <0x16>;
+			reg-io-width = <2>;
+		};
+
+
+		can@2,0 {
+			compatible = "nxp,sja1000";
+			reg = <2 0 0x100>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(N, 0) IRQ_TYPE_EDGE_RISING>;
+			nxp,external-clock-frequency = <24000000>;
+			nxp,tx-output-config = <0x16>;
+			reg-io-width = <2>;
+		};
+
+
+		can@3,0 {
+			compatible = "nxp,sja1000";
+			reg = <3 0 0x100>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(N, 1) IRQ_TYPE_EDGE_RISING>;
+			nxp,external-clock-frequency = <24000000>;
+			nxp,tx-output-config = <0x16>;
+			reg-io-width = <2>;
+		};
+
+
+		can@4,0 {
+			compatible = "nxp,sja1000";
+			reg = <4 0 0x100>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(N, 2) IRQ_TYPE_EDGE_RISING>;
+			nxp,external-clock-frequency = <24000000>;
+			nxp,tx-output-config = <0x16>;
+			reg-io-width = <2>;
+		};
+
+
+		can@5,0 {
+			compatible = "nxp,sja1000";
+			reg = <5 0 0x100>;
+			interrupt-parent = <&gpio>;
+			interrupts = <TEGRA_GPIO(N, 3) IRQ_TYPE_EDGE_RISING>;
+			nxp,external-clock-frequency = <24000000>;
+			nxp,tx-output-config = <0x16>;
+			reg-io-width = <2>;
 		};
 	};
 
